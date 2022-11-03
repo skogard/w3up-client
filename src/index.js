@@ -66,14 +66,14 @@ class Client {
    * Get the current "machine" DID
    * @returns {Promise<API.SigningPrincipal>}
    */
-  async agent() {
+  async agent(buf) {
     let secret = this.settings.agent_secret
 
     if (secret) {
       return SigningPrincipal.parse(secret)
     }
 
-    const principal = await SigningPrincipal.generate()
+    const principal = (buf ? await SigningPrincipal.derive(buf) : await SigningPrincipal.generate())
     this.settings.agent_secret = SigningPrincipal.format(principal)
 
     return principal
@@ -83,14 +83,14 @@ class Client {
    * Get the current "account" DID
    * @returns {Promise<API.SigningPrincipal>}
    */
-  async account() {
+  async account(buf) {
     let secret = this.settings.account_secret
 
     if (secret) {
       return SigningPrincipal.parse(secret)
     }
 
-    const account = await SigningPrincipal.generate()
+    const account = (buf ? await SigningPrincipal.derive(buf) : await SigningPrincipal.generate())
     const agent = await this.agent()
     const del = await generateDelegation(
       { to: agent.did(), issuer: account },
@@ -129,9 +129,9 @@ class Client {
   /**
    * @returns {Promise<IdentityInfo>}
    */
-  async identity() {
-    const agent = await this.agent()
-    const account = await this.account()
+  async identity(opts) {
+    const agent = await this.agent(opts.agent)
+    const account = await this.account(opts.account)
     const delegation = await this.currentDelegation()
 
     if (!this.settings.account) {
@@ -150,7 +150,7 @@ class Client {
    * Register a user by email.
    * @param {string|undefined} email - The email address to register with.
    */
-  async register(email) {
+  async register(email, opts) {
     const savedEmail = this.settings.email
     if (!savedEmail) {
       this.settings.email = email
@@ -162,7 +162,7 @@ class Client {
     if (!email) {
       throw new Error(`Invalid email provided for registration: ${email}`)
     }
-    const identity = await this.identity()
+    const identity = await this.identity(opts)
 
     try {
       // @ts-ignore
