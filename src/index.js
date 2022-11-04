@@ -130,8 +130,8 @@ class Client {
    * @returns {Promise<IdentityInfo>}
    */
   async identity(opts) {
-    const agent = await this.agent(opts || opts.agent)
-    const account = await this.account(opts || opts.account)
+    const agent = await this.agent(opts && opts.agent)
+    const account = await this.account(opts && opts.account)
     const delegation = await this.currentDelegation()
 
     if (!this.settings.account) {
